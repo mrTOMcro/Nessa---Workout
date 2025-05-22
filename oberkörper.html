@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Oberkörper Workout – Vanessa Hometrainer</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 1rem;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+    }
+
+    .workout-container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .gif-container {
+      position: relative;
+      background: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 250px;
+      margin-bottom: 1rem;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .gif-container.paused img {
+      opacity: 0.2;
+    }
+
+    .pause-overlay {
+      position: absolute;
+      color: red;
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    .preview-overlay {
+      position: absolute;
+      bottom: 5px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    .controls button {
+      padding: 0.6rem;
+      margin: 0.2rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+    }
+
+    .controls {
+      text-align: center;
+    }
+
+    .info {
+      font-size: 0.9rem;
+      background: #eef;
+      padding: 0.5rem;
+      border-radius: 5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .set-indicator {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .set-indicator div {
+      width: 20px;
+      height: 20px;
+      margin: 0 3px;
+      background: #ddd;
+      border-radius: 50%;
+    }
+
+    .set-indicator .done {
+      background: #4caf50;
+    }
+
+    .set-indicator .current {
+      background: #2196f3;
+    }
+
+    .timer {
+      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .red {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="workout-container">
+    <h1>Oberkörper Workout</h1>
+    <div id="exerciseTitle"></div>
+    <div class="set-indicator" id="setIndicator"></div>
+    <div class="gif-container" id="gifContainer">
+      <span class="pause-overlay" id="pauseOverlay" style="display: none;">PAUSE</span>
+      <img id="exerciseGif" src="" alt="Übung" style="max-height: 100%; max-width: 100%;" />
+      <div class="preview-overlay" id="nextPreview"></div>
+    </div>
+    <div class="timer" id="timerDisplay">00:00</div>
+    <div class="info" id="exerciseInfo"></div>
+    <div class="controls">
+      <button id="startBtn">Start</button>
+      <button id="pauseBtn" style="display:none;">Pause</button>
+      <button id="continueBtn" style="display:none;">Weiter</button>
+      <button id="skipBtn" style="display:none;">Überspringen</button>
+      <button id="endBtn" style="display:none;">Beenden</button>
+    </div>
+  </div>
+
+  <audio id="startSound" src="Ton/Startsignal.mp3"></audio>
+  <audio id="pauseSound" src="Ton/Pausesignal.mp3"></audio>
+
+  <script>
+  const exercises = [
+    {
+      name: "Vorgebeugtes Kurzhantel-Rudern",
+      gif: "Oberkörper/Aufgabe1.gif",
+      duration: 60,
+      sets: 3,
+      info: "3×1 min, 10 kg – Langsame, kontrollierte Ausführung.",
+    },
+    {
+      name: "Kniender Liegestütz",
+      gif: "Oberkörper/Aufgabe2.gif",
+      duration: 45,
+      sets: 3,
+      info: "3×10–12 Wdh – Video-Erklärung vorhanden.",
+    },
+    {
+      name: "4 Arten Seitheben",
+      gif: "Oberkörper/Aufgabe3.gif",
+      duration: 40,
+      sets: 3,
+      info: "3×40 sec, 4 kg – Verschiedene Varianten, kontrollierte Ausführung.",
+    },
+    {
+      name: "Sitzendes Kurzhantel Schulterdrücken",
+      gif: "Oberkörper/Aufgabe4.gif",
+      duration: 40,
+      sets: 3,
+      info: "3×40 sec – Rücken gerade, Ellenbogen auf Schulterhöhe, kontrollierte Bewegung.",
+    },
+    {
+      name: "Bizepscurls stehend",
+      gif: "Oberkörper/Aufgabe5.gif",
+      duration: 60,
+      sets: 3,
+      info: "3×1 min, 6 kg – Langsame, kontrollierte Ausführung.",
+    },
+    {
+      name: "Kurzhantel Trizepsstrecken stehend",
+      gif: "Oberkörper/Aufgabe6.gif",
+      duration: 60,
+      sets: 3,
+      info: "3×1 min, 10 kg – Rücken gerade, kontrollierte Bewegung.",
+    },
+    {
+      name: "Seitstütz",
+      gif: "Oberkörper/Aufgabe7.gif",
+      duration: 60,
+      sets: 6,
+      info: "6×1 min – Core stabilisieren.",
+    },
+    {
+      name: "Liegendes Beinheben",
+      gif: "Oberkörper/Aufgabe8.gif",
+      duration: 60,
+      sets: 3,
+      info: "3×1 min – Core & Beinmuskulatur.",
+    }
+  ];
+
+    let currentExercise = 0;
+    let currentSet = 1;
+    let isPaused = false;
+    let timer;
+    let timeLeft = 0;
+    let inPause = false;
+
+    const title = document.getElementById("exerciseTitle");
+    const gif = document.getElementById("exerciseGif");
+    const info = document.getElementById("exerciseInfo");
+    const timerDisplay = document.getElementById("timerDisplay");
+    const pauseOverlay = document.getElementById("pauseOverlay");
+    const gifContainer = document.getElementById("gifContainer");
+    const nextPreview = document.getElementById("nextPreview");
+    const setIndicator = document.getElementById("setIndicator");
+
+    const startSound = document.getElementById("startSound");
+    const pauseSound = document.getElementById("pauseSound");
+
+    function startExercise() {
+      const ex = exercises[currentExercise];
+      updateUI();
+      timeLeft = ex.duration;
+      playSound(startSound);
+      timer = setInterval(countdown, 1000);
+      toggleControls(true);
+    }
+
+    function countdown() {
+      if (!isPaused) {
+        timeLeft--;
+        updateTimerDisplay();
+
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          if (!inPause) {
+            startPausePhase();
+          } else {
+            nextSetOrExercise();
+          }
+        }
+      }
+    }
+
+    function updateUI() {
+      const ex = exercises[currentExercise];
+      title.textContent = `Übung ${currentExercise + 1}: ${ex.name}`;
+      gif.src = ex.gif;
+      gifContainer.classList.remove("paused");
+      pauseOverlay.style.display = "none";
+      info.textContent = ex.info;
+      updateSetIndicator();
+      nextPreview.innerText = exercises[currentExercise + 1] ? `Nächste: ${exercises[currentExercise + 1].name}` : "";
+    }
+
+    function updateSetIndicator() {
+      const ex = exercises[currentExercise];
+      setIndicator.innerHTML = '';
+      for (let i = 1; i <= ex.sets; i++) {
+        const dot = document.createElement('div');
+        if (i < currentSet) dot.classList.add('done');
+        else if (i === currentSet) dot.classList.add('current');
+        setIndicator.appendChild(dot);
+      }
+    }
+
+    function updateTimerDisplay() {
+      timerDisplay.textContent = `${String(Math.floor(timeLeft / 60)).padStart(2, '0')}:${String(timeLeft % 60).padStart(2, '0')}`;
+      timerDisplay.classList.toggle("red", timeLeft <= 5);
+    }
+
+    function startPausePhase() {
+      inPause = true;
+      gifContainer.classList.add("paused");
+      pauseOverlay.style.display = "block";
+      playSound(pauseSound);
+      timeLeft = 60;  // Pause 60 Sekunden
+      timer = setInterval(countdown, 1000);
+    }
+
+    function nextSetOrExercise() {
+      inPause = false;
+      const ex = exercises[currentExercise];
+      if (currentSet < ex.sets) {
+        currentSet++;
+        startExercise();
+      } else {
+        currentExercise++;
+        currentSet = 1;
+        if (currentExercise < exercises.length) {
+          startExercise();
+        } else {
+          title.textContent = "Workout abgeschlossen!";
+          gif.src = "";
+          info.textContent = "";
+          timerDisplay.textContent = "";
+          setIndicator.innerHTML = "";
+          toggleControls(false);
+        }
+      }
+    }
+
+    function playSound(audio) {
+      audio.currentTime = 0;
+      audio.play();
+    }
+
+    function toggleControls(running) {
+      document.getElementById("startBtn").style.display = running ? "none" : "inline-block";
+      document.getElementById("pauseBtn").style.display = running ? "inline-block" : "none";
+      document.getElementById("continueBtn").style.display = "none";
+      document.getElementById("skipBtn").style.display = running ? "inline-block" : "none";
+      document.getElementById("endBtn").style.display = running ? "inline-block" : "none";
+    }
+
+    document.getElementById("startBtn").onclick = () => {
+      startExercise();
+    };
+
+    document.getElementById("pauseBtn").onclick = () => {
+      isPaused = true;
+      gifContainer.classList.add("paused");
+      pauseOverlay.style.display = "block";
+      document.getElementById("pauseBtn").style.display = "none";
+      document.getElementById("continueBtn").style.display = "inline-block";
+    };
+
+    document.getElementById("continueBtn").onclick = () => {
+      isPaused = false;
+      gifContainer.classList.remove("paused");
+      pauseOverlay.style.display = "none";
+      document.getElementById("pauseBtn").style.display = "inline-block";
+      document.getElementById("continueBtn").style.display = "none";
+    };
+
+    document.getElementById("skipBtn").onclick = () => {
+      clearInterval(timer);
+      nextSetOrExercise();
+    };
+
+    document.getElementById("endBtn").onclick = () => {
+  window.location.href = "index.html";
+    };
+  </script>
+</body>
+</html>

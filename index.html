@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vanessa Hometrainer</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 10px;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .days {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .day {
+      flex: 1;
+      max-width: 13%;
+      text-align: center;
+      padding: 10px 0;
+      background-color: #ddd;
+      border-radius: 50%;
+      margin: 2px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .day.selected {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      text-align: center;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .calendar-day {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      padding: 8px 2px;
+      height: 60px;
+      border-radius: 6px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .calendar-day span {
+      font-weight: bold;
+    }
+
+    .weekend {
+      background-color: #e0e0e0;
+    }
+
+    .past {
+      color: #999;
+      text-decoration: line-through;
+      background-color: #f0f0f0;
+    }
+
+    .today {
+      border: 2px solid #4CAF50;
+    }
+
+    .trainings-liste {
+      background-color: white;
+      padding: 10px;
+      border-radius: 5px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .trainings-liste h2 {
+      text-align: center;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .training-link {
+      display: block;
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px;
+      margin: 6px 0;
+      border-radius: 5px;
+      text-decoration: none;
+      text-align: center;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Vanessa Hometrainer</h1>
+
+  <div class="days" id="daySelection">
+    <div class="day" data-day="0">Mo</div>
+    <div class="day" data-day="1">Di</div>
+    <div class="day" data-day="2">Mi</div>
+    <div class="day" data-day="3">Do</div>
+    <div class="day" data-day="4">Fr</div>
+    <div class="day" data-day="5">Sa</div>
+    <div class="day" data-day="6">So</div>
+  </div>
+
+  <div class="calendar" id="calendar"></div>
+
+  <div class="trainings-liste">
+    <h2>Workouts</h2>
+    <a class="training-link" href="unterkörper.html">🏋️‍♀️ Unterkörper</a>
+    <a class="training-link" href="oberkörper.html">💪 Oberkörper</a>
+    <a class="training-link" href="ganzkörper.html">🔥 Ganzkörper</a>
+  </div>
+
+  <script>
+    const dayButtons = document.querySelectorAll('.day');
+    const calendar = document.getElementById('calendar');
+    let selectedDays = [];
+
+    dayButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const day = parseInt(btn.dataset.day);
+        if (btn.classList.contains('selected')) {
+          btn.classList.remove('selected');
+          selectedDays = selectedDays.filter(d => d !== day);
+        } else {
+          if (selectedDays.length < 3) {
+            btn.classList.add('selected');
+            selectedDays.push(day);
+          }
+        }
+        if (selectedDays.length === 3) {
+          generateCalendar();
+        } else {
+          calendar.innerHTML = '<p style="grid-column: span 7; font-style: italic;">Bitte 3 Tage auswählen</p>';
+        }
+      });
+    });
+
+    function generateCalendar() {
+      calendar.innerHTML = '';
+      const today = new Date();
+      const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() + 1); // Montag
+
+      for (let week = 0; week < 2; week++) {
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(start);
+          date.setDate(start.getDate() + week * 7 + i);
+          const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1;
+
+          const isWeekend = dayIndex >= 5;
+          const isToday = date.toDateString() === today.toDateString();
+          const isPast = date < today && date.toDateString() !== today.toDateString();
+
+          const content = document.createElement('div');
+          content.className = 'calendar-day';
+          if (isWeekend) content.classList.add('weekend');
+          if (isToday) content.classList.add('today');
+          if (isPast) content.classList.add('past');
+
+          const dateStr = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth()+1).toString().padStart(2, '0')}`;
+          content.innerHTML = `<span>${dateStr}</span>`;
+
+          const workoutShort = ['U', 'O', 'G']; // Kurzform
+          const trainingIndex = selectedDays.indexOf(dayIndex);
+          if (trainingIndex !== -1) {
+            content.innerHTML += `<div><strong>${workoutShort[trainingIndex]}</strong></div>`;
+          }
+
+          calendar.appendChild(content);
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>
