@@ -276,6 +276,7 @@
 
     function nextSetOrExercise() {
       inPause = false;
+      playSound(startSound)
       const ex = exercises[currentExercise];
       if (currentSet < ex.sets) {
         currentSet++;
